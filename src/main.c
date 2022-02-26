@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -8,15 +9,14 @@
 
 #include "window.h"
 #include "shader.h"
-#include "block.h"
-#include "vertex.h"
+#include "renderer.h"
 #include "texture.h"
 #include "camera.h"
 
-//TODO batch renderer
+//TODO mogelijkheid voor meer dan 31 textures
+//TODO maak shaders makkelijker
 //TODO texture atlas
 //TODO animation
-//TODO maak shaders makkelijker
 //TODO post processing
 //TODO text
 //TODO gui iets
@@ -29,6 +29,8 @@
 //TODO multi-threading
 //TODO gpu offloading
 //TODO profiling
+
+#define whiteColor (vec4){1.0f, 1.0f, 1.0f, 1.0f}
 
 int main(void)
 {
@@ -47,44 +49,13 @@ int main(void)
 	//set viewport
 	glViewport(0, 0, 800, 600);
 
-	unsigned int indices[] = {
-		0, 1, 2,
-		2, 3, 0
-	};
+	glEnable(GL_DEPTH_TEST);
 
-	unsigned int shaderProgram;
+	initRenderer();
 
-	if(!(shaderProgram = createShaderProgram("shaders/shader.vert", "shaders/shader.frag")));
+	uint32_t shaderProgram = createShaderProgram("shaders/shader.vert", "shaders/shader.frag");
 
 	glUseProgram(shaderProgram);
-
-	//Maak en doe buffer dingen
-	unsigned int vao, vbo, ebo;
-
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
-
-	glBindVertexArray(vao);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * 50, NULL, GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//Stuur vertex data dingen naar shaders
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vec2) * 2 + sizeof(vec4) + sizeof(float), 0); 
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vec2) * 2 + sizeof(vec4) + sizeof(float), (void*)(sizeof(vec2))); 
-
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vec2) * 2 + sizeof(vec4) + sizeof(float), (void*)(sizeof(vec2) + sizeof(vec4))); 
-
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(vec2) * 2 + sizeof(vec4) + sizeof(float), (void*)(sizeof(vec2) * 2 + sizeof(vec4))); 
 
 	//Handle textures
 	char* textureFiles[] = {
@@ -94,12 +65,30 @@ int main(void)
 
 	uint32_t* textures = generateTextures2D(textureFiles, 2, GL_CLAMP_TO_EDGE, GL_LINEAR);
 
-	glBindTextureUnit(0, textures[0]);
-	glBindTextureUnit(1, textures[1]);
+	uint32_t whiteTextureData = 0xffffffff;
+
+	uint32_t whiteTextureID;
+	glGenTextures(1, &whiteTextureID);
+	glBindTexture(GL_TEXTURE_2D, whiteTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &whiteTextureData);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(0, whiteTextureID);
+
+	int samplers[32];
+
+	for(int i = 0; i < 32; i++)
+	{
+		//glBindTextureUnit(i, textures[i]);
+		samplers[i] = i;
+	}
 
 	unsigned int texLoc = glGetUniformLocation(shaderProgram, "Textures");
-	int samplers[2] = {0, 1};
-	glUniform1iv(texLoc, 2, samplers);
+	glUniform1iv(texLoc, 32, samplers);
+
+	glBindTextureUnit(1, textures[0]);
+	glBindTextureUnit(2, textures[1]);
 
 	//Setup camera
 	Camera camera = initCamera();
@@ -113,27 +102,55 @@ int main(void)
 	{
 		//Clear screen every loop
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		sendViewProjMat(camera);
 
-		//FIXME maak een solid color shader en bind deze aan drawSC
 		//Draw things
-		drawSquare((vec2){250, 175}, 150, (vec4){0.0f, 0.0f, 1.0f, 1.0f}, 0, (vec4){1.0f, 1.0f, 1.0f, 1.0f});
-		drawSquare((vec2){450, 175}, 120, (vec4){0.0f, 0.0f, 1.0f, 1.0f}, 1, (vec4){1.0f, 1.0f, 1.0f, 1.0f});
+		for(int i = 0; i < 200; i++)
+		{
+			for(int j = 0; j < 200; j++)
+			{
+				drawSquare((vec2){000 + (i * 06),  000 + (j * 06)}, 05, 1, whiteColor);
+			}
+		}
+
+		drawSquare((vec2){450, 175}, 120, 1, whiteColor);
+		drawSquare((vec2){350, 400}, 100, 2, whiteColor);
+		drawSquareSC((vec2){200, 200}, 50, (vec4){1.0f, 0.0f, 1.0f, 1.0f});
+		
+		flushRenderer();
+
+		if(glfwGetKey(window.window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			camera.pos[1] -= 5;
+		}
+
+		if(glfwGetKey(window.window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			camera.pos[1] += 5;
+		}
+
+		if(glfwGetKey(window.window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			camera.pos[0] -= 5;
+		}
+
+		if(glfwGetKey(window.window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			camera.pos[0] += 5;
+		}
 
 		//Swap buffers and poll events
 		glfwSwapBuffers(window.window);
 		glfwPollEvents();
 	}
 
+	free(textures);
+
 	glDeleteProgram(shaderProgram);
 	
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
-
-	free(textures);
+	quitRenderer();
 
 	glfwTerminate();
 

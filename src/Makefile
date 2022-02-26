@@ -1,7 +1,7 @@
 #openGL simple 2D render engine
 
 P=../builds/test
-SRC=main.c shader.c window.c block.c texture.c camera.c
+SRC= shader.c window.c renderer.c texture.c camera.c main.c
 OBJ=${SRC:.c=.o}
 CFLAGS= -g -std=c17 -m64 -Wall -O3 `pkg-config --cflags glfw3 gl glew cglm` -I../include
 LDFLAGS= `pkg-config --libs glfw3 gl glew cglm` -ldl -lm

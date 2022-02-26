@@ -6,8 +6,6 @@
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 
-#include "vertex.h"
-
 typedef struct Window {
 	GLFWwindow* window;
 	vec2 size;

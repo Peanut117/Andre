@@ -6,7 +6,7 @@ in float TexIndex;
 
 out vec4 outColor;
 
-uniform sampler2D Textures[2];
+uniform sampler2D Textures[32];
 
 void main()
 {
