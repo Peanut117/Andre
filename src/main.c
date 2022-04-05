@@ -15,7 +15,6 @@
 
 //TODO mogelijkheid voor meer dan 31 textures
 //TODO maak shaders makkelijker
-//TODO texture atlas
 //TODO animation
 //TODO post processing
 //TODO text
@@ -30,7 +29,7 @@
 //TODO gpu offloading
 //TODO profiling
 
-#define whiteColor (vec4){1.0f, 1.0f, 1.0f, 1.0f}
+#define WHITE_COLOR (vec4){1.0f, 1.0f, 1.0f, 1.0f}
 
 int main(void)
 {
@@ -60,10 +59,18 @@ int main(void)
 	//Handle textures
 	char* textureFiles[] = {
 		"../textures/cock.png",
-		"../textures/test.png"
+		"../textures/test.png",
 	};
 
-	uint32_t* textures = generateTextures2D(textureFiles, 2, GL_CLAMP_TO_EDGE, GL_LINEAR);
+	char* spriteSheet[] = {
+		"../textures/"
+	};
+
+	uint32_t* textures = generateTextures2D(textureFiles, 2, GL_CLAMP_TO_EDGE, GL_NEAREST);
+
+	int spriteWidth, spriteHeight;
+
+	uint32_t* sprite = generateTexture2DWH(spriteSheet, 1, GL_CLAMP_TO_EDGE, GL_NEAREST, &spriteWidth, &spriteHeight);
 
 	uint32_t whiteTextureData = 0xffffffff;
 
@@ -89,6 +96,7 @@ int main(void)
 
 	glBindTextureUnit(1, textures[0]);
 	glBindTextureUnit(2, textures[1]);
+	glBindTextureUnit(3, sprite[0]);
 
 	//Setup camera
 	Camera camera = initCamera();
@@ -107,17 +115,11 @@ int main(void)
 		sendViewProjMat(camera);
 
 		//Draw things
-		for(int i = 0; i < 200; i++)
-		{
-			for(int j = 0; j < 200; j++)
-			{
-				drawSquare((vec2){000 + (i * 06),  000 + (j * 06)}, 05, 1, whiteColor);
-			}
-		}
+		//Atlas spriteAtlas = {3, 1280.0f, 832.0f, 20, 13};
+		Atlas spriteAtlas = {3, spriteWidth, spriteHeight, 20, 13};
 
-		drawSquare((vec2){450, 175}, 120, 1, whiteColor);
-		drawSquare((vec2){350, 400}, 100, 2, whiteColor);
-		drawSquareSC((vec2){200, 200}, 50, (vec4){1.0f, 0.0f, 1.0f, 1.0f});
+		//drawSpriteScaled((vec2){50, 50}, 150, spriteAtlas, (vec2){7, 7});
+		drawSprite((vec2){50, 50}, spriteAtlas, (vec2){7, 7});
 		
 		flushRenderer();
 

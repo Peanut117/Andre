@@ -89,7 +89,7 @@ uint32_t* generateTexture2DWH(char** file, uint32_t number, int wrap, int filter
 			{
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, *width, *height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 			}
-			glGenerateMipmap(GL_TEXTURE_2D);
+			//glGenerateMipmap(GL_TEXTURE_2D);
 		} else {
 			printf("Failed to load texture");
 			return 0;

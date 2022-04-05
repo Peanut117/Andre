@@ -1,8 +1,9 @@
 #include "renderer.h"
 
+#define WHITE_COLOR (vec4){1.0f, 1.0f, 1.0f, 1.0f}
+
 uint32_t quadCount = 0;
 const uint32_t quadSize = sizeof(Vertex) * 4;
-
 const uint32_t maxQuadCount = 1000;
 const uint32_t maxVertexCount = maxQuadCount * 4;
 const uint32_t maxIndexCount = maxQuadCount * 6;
@@ -114,9 +115,7 @@ void drawQuadTP(vec4 pos, vec4 texCoords, uint32_t texID, vec4 color)
 	vertices[3].texCoords[0] = texCoords[0];
 	vertices[3].texCoords[1] = texCoords[1] + texCoords[3];
 
-	for(int i = 0; i < 4; i++)
-	{
-		glm_vec4_copy(color, vertices[i].color);
+	for(int i = 0; i < 4; i++) { glm_vec4_copy(color, vertices[i].color);
 		vertices[i].texID = texID;
 	}
 
@@ -128,4 +127,32 @@ void drawQuadTP(vec4 pos, vec4 texCoords, uint32_t texID, vec4 color)
 void drawSquare(vec2 pos, uint32_t size, uint32_t texID, vec4 color)
 {
 	drawQuad(pos, (vec2){size, size}, texID, color);
+}
+
+void drawSprite(vec2 pos, Atlas atlas, vec2 spritePos)
+{
+	float spriteWidth = atlas.width / atlas.freqWidth;
+	float spriteHeight = atlas.height / atlas.freqHeight;
+
+	drawQuadTP((vec4){pos[0], pos[1], pos[0] + spriteWidth, pos[1] + spriteHeight},
+				(vec4){
+				(spritePos[0] * spriteWidth) / atlas.width, (spritePos[1] * spriteHeight) / atlas.height,
+				spriteWidth / atlas.width, spriteHeight / atlas.height
+				},
+				atlas.texID, WHITE_COLOR);
+}
+
+void drawSpriteScaled(vec2 pos, uint32_t size, Atlas atlas, vec2 spritePos)
+{
+	float spriteWidth = atlas.width / atlas.freqWidth;
+	float spriteHeight = atlas.height / atlas.freqHeight;
+
+	float ratio = spriteWidth / spriteHeight;
+
+	drawQuadTP((vec4){pos[0], pos[1], pos[0] + size * ratio, pos[1] + size},
+				(vec4){
+				(spritePos[0] * spriteWidth) / atlas.width, (spritePos[1] * spriteHeight) / atlas.height,
+				spriteWidth / atlas.width, spriteHeight / atlas.height
+				},
+				atlas.texID, WHITE_COLOR);
 }

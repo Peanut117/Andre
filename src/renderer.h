@@ -17,6 +17,14 @@ typedef struct Vertex {
 	float texID;
 } Vertex;
 
+typedef struct Atlas {
+	float texID;
+	int width;
+	int height;
+	uint32_t freqWidth; //Aantal sprites in de breedte
+	uint32_t freqHeight; //Aantal sprites in de hoogte
+} Atlas;
+
 void initRenderer();
 
 void flushRenderer();
@@ -32,5 +40,9 @@ void drawQuad(vec2 pos, vec2 size, uint32_t texID, vec4 color);
 void drawQuadTP(vec4 pos, vec4 texCoords, uint32_t texID, vec4 color);
 
 void drawSquare(vec2 pos, uint32_t size, uint32_t texID, vec4 color);
+
+void drawSprite(vec2 pos, Atlas atlas, vec2 spritePos);
+
+void drawSpriteScaled(vec2 pos, uint32_t size, Atlas atlas, vec2 spritePos);
 
 #endif //RENDERER_H
